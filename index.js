@@ -4,8 +4,6 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-
-
 console.log(process.env.DB_USER);
 console.log(process.env.DB_PASS);
 
@@ -17,8 +15,6 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri =
   'mongodb+srv://gradeMinersDB:VCKceMijJz0qwlE4@cluster0.xljmjxf.mongodb.net/?retryWrites=true&w=majority';
 
-const 
-
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -27,10 +23,12 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+const assignments = client.db('gradeMinersDB').collection('assignments');
 
-app.get('/assignments', (req, res) => {
-  const result = 
-})
+app.get('/assignments', async (req, res) => {
+  const result = await assignments.find().toArray();
+  res.send(result);
+});
 
 async function run() {
   try {
