@@ -25,7 +25,14 @@ const client = new MongoClient(uri, {
 });
 
 const assignments = client.db('gradeMinersDB').collection('assignments');
+const selectedItems = client.db('gradeMinersDB').collection('selected-items');
 
+// Post assignment data
+app.post('/assignments', async (req, res) => {
+  const select = req.body;
+  const result = await assignments.insertOne(select);
+  res.send(result);
+});
 // Get all assignments data
 app.get('/assignments', async (req, res) => {
   const result = await assignments.find().toArray();
@@ -44,6 +51,13 @@ app.get('/update/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) };
   const result = await assignments.findOne(query);
+  res.send(result);
+});
+
+//Post Select assignment data
+app.post('/selected', async (req, res) => {
+  const select = req.body;
+  const result = await selectedItems.insertOne(select);
   res.send(result);
 });
 
