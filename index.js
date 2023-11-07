@@ -4,14 +4,14 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-console.log(process.env.DB_USER);
-console.log(process.env.DB_PASS);
+// console.log(process.env.DB_USER);
+// console.log(process.env.DB_PASS);
 
 // middlewares
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri =
   'mongodb+srv://gradeMinersDB:VCKceMijJz0qwlE4@cluster0.xljmjxf.mongodb.net/?retryWrites=true&w=majority';
 
@@ -23,10 +23,27 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
 const assignments = client.db('gradeMinersDB').collection('assignments');
 
+// Get all assignments data
 app.get('/assignments', async (req, res) => {
   const result = await assignments.find().toArray();
+  res.send(result);
+});
+
+// Get single assignment detail data
+app.get('/detail/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await assignments.findOne(query);
+  res.send(result);
+});
+// Get assignment update data
+app.get('/update/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await assignments.findOne(query);
   res.send(result);
 });
 
