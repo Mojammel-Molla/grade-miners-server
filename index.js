@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 // middlewares
 app.use(
   cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://grade-miners.web.app'],
     credentials: true,
   })
 );
@@ -43,8 +43,8 @@ app.post('/jwt', async (req, res) => {
   res
     .cookie('token', token, {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     })
     .send({ success: true });
 });
