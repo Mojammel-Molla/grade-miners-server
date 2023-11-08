@@ -19,8 +19,7 @@ app.use(
 );
 app.use(express.json());
 
-const uri =
-  'mongodb+srv://gradeMinersDB:VCKceMijJz0qwlE4@cluster0.xljmjxf.mongodb.net/?retryWrites=true&w=majority';
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xljmjxf.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -91,11 +90,11 @@ app.get('/take-assignment/:id', async (req, res) => {
 });
 
 //Post Select assignment data
-app.post('/selected', async (req, res) => {
-  const select = req.body;
-  const result = await selectedItems.insertOne(select);
-  res.send(result);
-});
+// app.post('/selected', async (req, res) => {
+//   const select = req.body;
+//   const result = await selectedItems.insertOne(select);
+//   res.send(result);
+// });
 
 //Post submitted assignment data
 app.post('/submissions', async (req, res) => {
@@ -103,19 +102,46 @@ app.post('/submissions', async (req, res) => {
   const result = await submittedItems.insertOne(submitted);
   res.send(result);
 });
-//Get submitted assignment data
+
+//Get submitted pending assignment data
 app.get('/submissions', async (req, res) => {
-  const result = await submittedItems.find().toArray();
+  const query = { status: 'pending' };
+  const result = await submittedItems.find(query).toArray();
   res.send(result);
 });
 
-// Put update single assignment data
+// Put single assignment marks
+app.put('/submissions/:id', async (req, res) => {
+  const id = req.params.id;
+  const submitMarks = req.body;
+  const filter = { _id: new ObjectId(id) };
+  const options = { upsert: true };
+  const assignment = {
+    $set: {
+      status: submitMarks.status,
+      marks: submitMarks.marks,
+      feedback: submitMarks.feedback,
+    },
+  };
+  const result = await submittedItems.updateOne(filter, assignment, options);
+  res.send(result);
+});
+
+// Get single assignment submit data
+app.get('/submissions/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await submittedItems.findOne(query);
+  res.send(result);
+});
+
+// Put method to update single assignment data
 app.put('/update/:id', async (req, res) => {
   const id = req.params.id;
   const updatedAssignment = req.body;
   const filter = { _id: new ObjectId(id) };
   const options = { upsert: true };
-  const product = {
+  const assignment = {
     $set: {
       title: updatedAssignment.title,
       subject: updatedAssignment.subject,
@@ -125,7 +151,23 @@ app.put('/update/:id', async (req, res) => {
       difficulty_level: updatedAssignment.level,
     },
   };
-  const result = await assignments.updateOne(filter, product, options);
+  const result = await assignments.updateOne(filter, assignment, options);
+  res.send(result);
+});
+
+// Booking get via email
+app.get('/my-assignments', async (req, res) => {
+  console.log(req.query.email);
+  // console.log('Token from client', req.cookies.token);
+  // if (req.query.email !== req.user.email) {
+  //   return res.status(403).send({ massage: 'forbidden access' });
+  // }
+  let query = {};
+  if (req.query?.email) {
+    query = { email: req.query.email };
+  }
+  console.log(query);
+  const result = await submittedItems.find(query).toArray();
   res.send(result);
 });
 
