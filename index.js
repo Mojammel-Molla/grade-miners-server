@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -8,10 +11,14 @@ const port = process.env.PORT || 5000;
 // console.log(process.env.DB_PASS);
 
 // middlewares
-app.use(cors());
+app.use(
+  cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri =
   'mongodb+srv://gradeMinersDB:VCKceMijJz0qwlE4@cluster0.xljmjxf.mongodb.net/?retryWrites=true&w=majority';
 
@@ -26,6 +33,27 @@ const client = new MongoClient(uri, {
 
 const assignments = client.db('gradeMinersDB').collection('assignments');
 const selectedItems = client.db('gradeMinersDB').collection('selected-items');
+const submittedItems = client.db('gradeMinersDB').collection('submittedItems');
+
+// Post Jwt token
+app.post('/jwt', async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: '1hr',
+  });
+  res
+    .cookie('token', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    })
+    .send({ success: true });
+});
+
+app.post('/logout', async (req, res) => {
+  const user = req.body;
+  res.clearCookie('token', { maxAge: 0 }).send({ success: true });
+});
 
 // Post assignment data
 app.post('/assignments', async (req, res) => {
@@ -54,10 +82,50 @@ app.get('/update/:id', async (req, res) => {
   res.send(result);
 });
 
+// get data take-assignment page
+app.get('/take-assignment/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await assignments.findOne(query);
+  res.send(result);
+});
+
 //Post Select assignment data
 app.post('/selected', async (req, res) => {
   const select = req.body;
   const result = await selectedItems.insertOne(select);
+  res.send(result);
+});
+
+//Post submitted assignment data
+app.post('/submissions', async (req, res) => {
+  const submitted = req.body;
+  const result = await submittedItems.insertOne(submitted);
+  res.send(result);
+});
+//Get submitted assignment data
+app.get('/submissions', async (req, res) => {
+  const result = await submittedItems.find().toArray();
+  res.send(result);
+});
+
+// Put update single assignment data
+app.put('/update/:id', async (req, res) => {
+  const id = req.params.id;
+  const updatedAssignment = req.body;
+  const filter = { _id: new ObjectId(id) };
+  const options = { upsert: true };
+  const product = {
+    $set: {
+      title: updatedAssignment.title,
+      subject: updatedAssignment.subject,
+      description: updatedAssignment.description,
+      date: updatedAssignment.date,
+      thumbnail_url: updatedAssignment.photo,
+      difficulty_level: updatedAssignment.level,
+    },
+  };
+  const result = await assignments.updateOne(filter, product, options);
   res.send(result);
 });
 
