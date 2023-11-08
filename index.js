@@ -110,6 +110,13 @@ app.get('/submissions', async (req, res) => {
   res.send(result);
 });
 
+//Get submitted confirm assignment data with marks
+app.get('/reviewed-assignments', async (req, res) => {
+  const query = { status: 'Confirm' };
+  const result = await submittedItems.find(query).toArray();
+  res.send(result);
+});
+
 // Put single assignment marks
 app.put('/submissions/:id', async (req, res) => {
   const id = req.params.id;
@@ -124,6 +131,13 @@ app.put('/submissions/:id', async (req, res) => {
     },
   };
   const result = await submittedItems.updateOne(filter, assignment, options);
+  res.send(result);
+});
+// Delete single assignment by specific user
+app.delete('/submissions/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+  const result = await submittedItems.deleteOne(query);
   res.send(result);
 });
 
